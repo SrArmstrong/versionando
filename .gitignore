@@ -1,0 +1,30 @@
+# Archivos binarios compilados
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.o
+
+# Directorios de compilación
+/bin
+/build
+/dist
+
+# Archivos de dependencias
+vendor/
+
+# Caché de módulos de Go
+go.sum
+go.mod
+
+# Archivos temporales y de depuración
+*.log
+*.tmp
+*.out
+*.test
+
+# Configuración de IDEs y editores
+.vscode/
+.idea/
+*.swp

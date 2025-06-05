@@ -11,7 +11,7 @@ var jwtSecret = []byte("tu_super_secreto_jwt") // Cambia esto en producción
 func CreateToken(userID string) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": userID,
-		"exp":     time.Now().Add(10 * time.Minute).Unix(), // 10 minutos de validez
+		"exp":     time.Now().Add(60 * time.Minute).Unix(), // 10 minutos de validez
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

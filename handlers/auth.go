@@ -113,3 +113,194 @@ func Login(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"token": token})
 }
+
+func GetUser(c *fiber.Ctx) error {
+	userID := c.Params("id")
+	if userID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Se requiere ID de usuario",
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	doc, err := config.FirestoreClient.Collection("users").Doc(userID).Get(ctx)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Usuario no encontrado",
+		})
+	}
+
+	var user models.User
+	if err := doc.DataTo(&user); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Error al procesar datos del usuario",
+		})
+	}
+
+	// No devolver la contraseña ni la respuesta secreta
+	user.Password = ""
+	user.RespuestaSecreta = ""
+
+	return c.JSON(user)
+}
+
+// UpdateUser actualiza un usuario existente
+func UpdateUser(c *fiber.Ctx) error {
+	userID := c.Params("id")
+	if userID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Se requiere ID de usuario",
+		})
+	}
+
+	var updateData models.UserUpdate
+	if err := c.BodyParser(&updateData); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Datos inválidos",
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Verificar que el usuario existe
+	docRef := config.FirestoreClient.Collection("users").Doc(userID)
+	if _, err := docRef.Get(ctx); err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Usuario no encontrado",
+		})
+	}
+
+	// Preparar datos para actualizar
+	updates := make(map[string]interface{})
+	if updateData.Nombre != "" {
+		updates["nombre"] = updateData.Nombre
+	}
+	if updateData.Apellidos != "" {
+		updates["apellidos"] = updateData.Apellidos
+	}
+	if updateData.Email != "" {
+		// Verificar si el nuevo email ya existe
+		iter := config.FirestoreClient.Collection("users").
+			Where("email", "==", updateData.Email).
+			Documents(ctx)
+		for {
+			doc, err := iter.Next()
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": "Error al verificar email",
+				})
+			}
+			if doc.Ref.ID != userID {
+				return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+					"error": "El email ya está en uso por otro usuario",
+				})
+			}
+		}
+		updates["email"] = updateData.Email
+	}
+	if updateData.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(updateData.Password), 14)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Error al encriptar la contraseña",
+			})
+		}
+		updates["password"] = string(hashedPassword)
+	}
+
+	// Actualizar timestamp
+	updates["updatedAt"] = time.Now()
+
+	// Realizar la actualización
+	_, err := docRef.Set(ctx, updates, firestore.MergeAll)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Error al actualizar el usuario",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Usuario actualizado exitosamente",
+	})
+}
+
+// DeleteUser elimina un usuario
+func DeleteUser(c *fiber.Ctx) error {
+	userID := c.Params("id")
+	if userID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Se requiere ID de usuario",
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Verificar que el usuario existe
+	docRef := config.FirestoreClient.Collection("users").Doc(userID)
+	_, err := docRef.Get(ctx)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Usuario no encontrado",
+		})
+	}
+
+	// Eliminar el usuario
+	_, err = docRef.Delete(ctx)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Error al eliminar el usuario",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Usuario eliminado exitosamente",
+	})
+}
+
+// GetAllUsers obtiene todos los usuarios (solo para administradores)
+func GetAllUsers(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	iter := config.FirestoreClient.Collection("users").Documents(ctx)
+	var users []models.UserPublic
+
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Error al obtener usuarios",
+			})
+		}
+
+		var user models.User
+		if err := doc.DataTo(&user); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Error al procesar datos del usuario",
+			})
+		}
+
+		// Crear versión pública del usuario sin información sensible
+		publicUser := models.UserPublic{
+			ID:        user.ID,
+			Nombre:    user.Nombre,
+			Apellidos: user.Apellidos,
+			Email:     user.Email,
+			CreatedAt: user.CreatedAt,
+			UpdatedAt: user.UpdatedAt,
+		}
+		users = append(users, publicUser)
+	}
+
+	return c.JSON(users)
+}

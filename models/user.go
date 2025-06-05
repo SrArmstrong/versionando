@@ -14,3 +14,19 @@ type User struct {
 	CreatedAt        time.Time `firestore:"created_at" json:"created_at"`
 	UpdatedAt        time.Time `firestore:"updated_at" json:"updated_at"`
 }
+
+type UserUpdate struct {
+	Nombre    string `json:"nombre,omitempty"`
+	Apellidos string `json:"apellidos,omitempty"`
+	Email     string `json:"email,omitempty"`
+	Password  string `json:"password,omitempty"`
+}
+
+type UserPublic struct {
+	ID        string    `json:"id"`
+	Nombre    string    `json:"nombre"`
+	Apellidos string    `json:"apellidos"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}

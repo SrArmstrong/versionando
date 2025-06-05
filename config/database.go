@@ -3,24 +3,40 @@ package config
 import (
 	"context"
 	"log"
-	"time"
 
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"cloud.google.com/go/firestore"
+	firebase "firebase.google.com/go"
+	"google.golang.org/api/option"
 )
 
-var DB *mongo.Database
+var FirestoreClient *firestore.Client
 
-func ConnectDB() {
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func ConnectFirestore() {
+	ctx := context.Background()
 
-	client, err := mongo.Connect(ctx, clientOptions)
+	// Configuración para Firebase Emulator (opcional para desarrollo)
+	// conf := &firebase.Config{ProjectID: "your-project-id"}
+	// app, err := firebase.NewApp(ctx, conf)
+
+	// Para producción con archivo de credenciales
+	opt := option.WithCredentialsFile("serviceAccountKey.json")
+	app, err := firebase.NewApp(ctx, nil, opt)
+
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error inicializando Firebase app: %v", err)
 	}
 
-	DB = client.Database("versionado")
-	log.Println("Conectado a MongoDB")
+	client, err := app.Firestore(ctx)
+	if err != nil {
+		log.Fatalf("Error inicializando Firestore: %v", err)
+	}
+
+	FirestoreClient = client
+	log.Println("Conectado a Firestore")
+}
+
+func CloseFirestore() {
+	if FirestoreClient != nil {
+		FirestoreClient.Close()
+	}
 }

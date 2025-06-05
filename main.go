@@ -1,27 +1,26 @@
 package main
 
 import (
+	"log"
 	"versionando/config"
-	"versionando/handlers"
-	"versionando/middleware"
+	"versionando/routes"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
 func main() {
+	// Inicializar Firebase
+	config.ConnectFirestore()
+	defer config.CloseFirestore()
+
 	app := fiber.New()
 
-	// Conectar a la base de datos
-	config.ConnectDB()
+	// Middleware
+	app.Use(logger.New())
 
-	// Rutas públicas
-	app.Post("/register", handlers.Register)
-	app.Post("/login", handlers.Login)
+	// Configurar rutas
+	routes.SetupRoutes(app)
 
-	// Rutas protegidas
-	api := app.Group("/api", middleware.JWTProtected())
-	api.Post("/tasks", handlers.CreateTask)
-	// Agrega aquí las demás rutas protegidas (CRUD de tareas y usuarios)
-
-	app.Listen(":3000")
+	log.Fatal(app.Listen(":3000"))
 }

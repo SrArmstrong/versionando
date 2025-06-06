@@ -1,20 +1,36 @@
 # CHANGELOG
 
-Toda modificacion important en este trabajo se documenta aquí.
+Todas las modificaciones importantes en este proyecto se documentan aquí.
 
-# [1.2.0] - 2025-06-05
-# Added
-- Endpoint `/api/tasks` para crear tareas
-- Middleware de autenticación con JWT
+## [1.0.0] - 2025-06-04
+### Added
+- Primera estructura base del proyecto.
+- Push inicial del repositorio.
 
-# Changed
-- El modelo `User` ahora incluye `FechaNacimiento` y `PreguntaSecreta`
+## [1.1.0] - 2025-06-04
+### Added
+- Funcionalidad de registro de usuarios con Firestore.
+- Inicio de sesión de usuarios con validación de credenciales.
 
-# [1.1.0] - 2025-05-22
-# Added
-- Registro de usuarios con Firestore
-- Hashing de contraseñas con bcrypt
+## [1.2.0] - 2025-06-05
+### Added
+- CRUD completo para usuarios.
+- Endpoints para crear, editar, eliminar y consultar usuarios.
+- Validación de rutas con JWT.
 
-# [1.0.0] - 2025-05-10
-# Added
-- Estructura base del proyecto con Fiber
+## [1.3.0] - 2025-06-05
+### Added
+- CRUD completo para tareas (tasks).
+- Endpoints protegidos para tareas: crear, consultar, editar y eliminar.
+
+## [1.4.0] - 2025-06-05
+### Added
+- Funcionalidad de recuperación de contraseña mediante correo y pregunta secreta.
+- Actualización segura de contraseña si la respuesta secreta es válida.
+
+## [1.4.1] - 2025-06-05
+
+### Added
+
+- Correcto manejo del README.md
+- CHANGELOG y README finalizados

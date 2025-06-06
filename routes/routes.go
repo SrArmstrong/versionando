@@ -19,6 +19,9 @@ func SetupRoutes(app *fiber.App) {
 	// Rutas para CRUD
 	auth.Post("/tasks", handlers.CreateTask)
 	auth.Get("/tasks", handlers.GetTasks)
+	auth.Get("/tasks/:id", handlers.GetTask)
+	auth.Put("/tasks/:id", handlers.UpdateTask)
+	auth.Delete("/tasks/:id", handlers.DeleteTask)
 
 	// Rutas CRUD para usuarios
 	auth.Get("/users", handlers.GetAllUsers)

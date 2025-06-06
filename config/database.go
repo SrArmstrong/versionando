@@ -14,10 +14,6 @@ var FirestoreClient *firestore.Client
 func ConnectFirestore() {
 	ctx := context.Background()
 
-	// Configuración para Firebase Emulator (opcional para desarrollo)
-	// conf := &firebase.Config{ProjectID: "your-project-id"}
-	// app, err := firebase.NewApp(ctx, conf)
-
 	// Para producción con archivo de credenciales
 	opt := option.WithCredentialsFile("serviceAccountKey.json")
 	app, err := firebase.NewApp(ctx, nil, opt)

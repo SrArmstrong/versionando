@@ -30,3 +30,13 @@ type UserPublic struct {
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
+
+type PasswordRecoveryRequest struct {
+	Email string `json:"email"`
+}
+
+type SecretAnswerVerification struct {
+	Email            string `json:"email"`
+	RespuestaSecreta string `json:"respuestaSecreta"`
+	NuevaPassword    string `json:"nuevapassword"`
+}

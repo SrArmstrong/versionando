@@ -12,6 +12,10 @@ func SetupRoutes(app *fiber.App) {
 	api := app.Group("/api")
 	api.Post("/register", handlers.Register)
 	api.Post("/login", handlers.Login)
+	api.Post("/passrecovery", handlers.RecoverPassword)
+
+	// Nuevas rutas para recuperación de contraseña
+	api.Post("/passrecovery/question", handlers.GetSecretQuestion)
 
 	// Rutas protegidas con JWT
 	auth := api.Group("/", middleware.JWTProtected())

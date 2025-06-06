@@ -35,7 +35,7 @@ go run main.go
 
 ## Peticiones HTTPS para usuario "user"
 
-### Get todos los usuario
+### GET todos los usuario
 
 Endpoint esperado: http://127.0.0.1:3000/api/users/
 
@@ -52,7 +52,7 @@ Salida:
   }
 ]
 
-### Get usuario especifico
+### GET usuario especifico
 
 Endpoint esperado (Se remplaza el ":id" por el id del usuario requerido): http://127.0.0.1:3000/api/users/:id
 
@@ -111,7 +111,7 @@ Salida:
 ## Peticiones HTTPS para tareas "task"
 
 
-### Get para obtener todas las tareas del usuario
+### GET para obtener todas las tareas del usuario
 
 Endpoint esperado: http://127.0.0.1:3000/api/tasks/
 
@@ -127,7 +127,7 @@ Salida:
   }
 ]
 
-### Get para obtener tarea especifica
+### GET para obtener tarea especifica
 
 Endpoint esperado (Se remplaza :id por el id de la tarea): http://127.0.0.1:3000/api/tasks/:id
 
@@ -142,7 +142,7 @@ Salida:
 }
 
 
-### Put actualizar tarea
+### PUT actualizar tarea
 
 Endpoint esperado (Se remplaza :id por el id de la tarea): http://127.0.0.1:3000/api/tasks/:id
 
@@ -169,4 +169,41 @@ Salida:
 
 {
   "message": "Tarea eliminada exitosamente"
+}
+
+
+## Recuperar contraseña con palabra secreta
+
+### POST Conseguir pregunta
+
+Endpoint esperado: http://127.0.0.1:3000/api/passrecovery/question
+
+Entrada:
+
+{
+    "email": "sergio@gmail.com"
+}
+
+Salida:
+
+{
+  "preguntaSecreta": "¿Cuál es tu color favorito?"
+}
+
+### POST Responder pregunta y cambiar contraseña
+
+Endpoint esperado: http://127.0.0.1:3000/api/passrecovery
+
+Entrada:
+
+{
+    "email": "sergio@gmail.com",
+    "respuestaSecreta": "Azul",
+    "nuevapassword": "Ares"
+}
+
+Salida:
+
+{
+  "message": "Contraseña actualizada exitosamente"
 }

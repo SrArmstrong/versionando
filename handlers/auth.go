@@ -304,3 +304,93 @@ func GetAllUsers(c *fiber.Ctx) error {
 
 	return c.JSON(users)
 }
+
+func GetSecretQuestion(c *fiber.Ctx) error {
+	var request models.PasswordRecoveryRequest
+	if err := c.BodyParser(&request); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Datos inválidos",
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Buscar usuario por email
+	iter := config.FirestoreClient.Collection("users").Where("email", "==", request.Email).Limit(1).Documents(ctx)
+	docs, err := iter.GetAll()
+	if err != nil || len(docs) == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Usuario no encontrado",
+		})
+	}
+
+	var user models.User
+	if err := docs[0].DataTo(&user); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Error procesando datos del usuario",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"preguntaSecreta": user.PreguntaSecreta,
+	})
+}
+
+// RecoverPassword permite actualizar la contraseña si la respuesta secreta es correcta
+func RecoverPassword(c *fiber.Ctx) error {
+	var input models.SecretAnswerVerification
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Datos inválidos",
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Buscar usuario por email
+	iter := config.FirestoreClient.Collection("users").Where("email", "==", input.Email).Limit(1).Documents(ctx)
+	docs, err := iter.GetAll()
+	if err != nil || len(docs) == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Usuario no encontrado",
+		})
+	}
+
+	var user models.User
+	if err := docs[0].DataTo(&user); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Error procesando datos del usuario",
+		})
+	}
+
+	// Verificar respuesta secreta
+	if err := bcrypt.CompareHashAndPassword([]byte(user.RespuestaSecreta), []byte(input.RespuestaSecreta)); err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Respuesta secreta incorrecta",
+		})
+	}
+
+	// Hashear la nueva contraseña
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.NuevaPassword), 14)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "No se pudo hashear la nueva contraseña",
+		})
+	}
+
+	// Actualizar la contraseña en la base de datos
+	_, err = docs[0].Ref.Update(ctx, []firestore.Update{
+		{Path: "password", Value: string(hashedPassword)},
+	})
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "No se pudo actualizar la contraseña",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Contraseña actualizada exitosamente",
+	})
+}
